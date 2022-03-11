@@ -27,13 +27,25 @@ def init_plays_db():
         played_at VARCHAR(200),
         timestamp VARCHAR(200),
         CONSTRAINT primary_key_constraint PRIMARY KEY (played_at);
-    )
-    """
+        )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """
     cursor.execute(tracks_table)
-    print("Opened database successfully")
+    return "Opened database successfully"
 
 def insert_tracks(song_name, artist_name, played_at, timestamp):
-    pass
+    insert = f"""
+        INSERT INTO tracks (song_name, artist_name, played_at, timestamp)
+        VALUES ('{song_name}', '{artist_name}', '{played_at}', '{timestamp}');
+        """
+    cursor.execute(insert)
+
+    query = f"""
+    SELECT * FROM tracks WHERE played_at={cursor.lastrowid};
+    """
+    cursor.execute(query)
+    row = cursor.fetchone()
+
+    return {'song_name':row[0], 'artist_name':row[1], 'played_at':row[2], 'timestamp':row[3]}
 
 # Validate downloaded data
 def check_if_valid_data(df: pd.DataFrame) -> bool:
@@ -103,10 +115,11 @@ def home():
         print("Data valid, proceed to Load stage")
     
     # Load
-    insert_tracks(tracks_df)
-    print("Loaded tracks into plays_db.tracks")
+    for track in tracks_df.itterrows():
+        insert_tracks(track['song_name'], track['artist_name'], track['played_at'], track['timestamp'])
 
-    return "Loaded to plays_db"+tracks_df
+    print("Loaded tracks into plays_db.tracks")
+    return 'Updated database successfully'
 
 if __name__ == '__main__':
     init_plays_db()
